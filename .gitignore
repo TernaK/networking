@@ -1,0 +1,8 @@
+*.o
+*.out
+.DS_Store
+*~
+*.swp
+**/build*/*
+**/xcode/*
+**/build-xcode/*
