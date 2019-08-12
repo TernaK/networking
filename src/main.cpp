@@ -7,7 +7,7 @@
 using namespace std;
 
 int main(int argc, char* args[]) {
-  std::thread job([]() {
+  std::thread server_thread([]() {
     networking::Address address("0.0.0.0", 5800);
     networking::SocketUDP socket(address);
 
@@ -15,7 +15,7 @@ int main(int argc, char* args[]) {
       networking::Address src_address;
       networking::Data data = socket.receive(src_address);
       fprintf(stderr, "from %s:%d\n", src_address.get_ip_address().c_str(), src_address.get_port());
-      std::string message(data());
+      std::string message(data(), data.length);
       fprintf(stderr, "message: %s\n", message.c_str());
     }
   });
@@ -31,5 +31,5 @@ int main(int argc, char* args[]) {
   }
   close(socket.get_file_descriptor());
 
-  job.join();
+  server_thread.join();
 }

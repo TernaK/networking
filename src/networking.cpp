@@ -74,11 +74,13 @@ SocketUDP::~SocketUDP() {
 }
 
 void SocketUDP::bind(Address address) {
+  int value = 1;
+  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value));
   if(::bind(fd, address(), sizeof(address.addr)) == -1)
     throw std::runtime_error(strerror(errno));
   this->address = address;
   bound = true;
-  std::cerr << "socket bound to " << address.get_ip_address() << ":" << address.get_port() << std::endl;
+  fprintf(stderr, "socket bound to %s:%d", address.get_ip_address().c_str(), address.get_port());
 }
 
 Data SocketUDP::receive(Address& src) {
