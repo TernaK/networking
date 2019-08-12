@@ -27,14 +27,14 @@ namespace networking {
 
     Data() = default;
     Data(int len);
-    Data(char* data, int len);
+    Data(const char* data, int len);
     Data& operator=(const Data&);
     Data(Data&&);
     ~Data();
-    char* operator()() { return data_ptr; }
+    const char* operator()() { return data_ptr; }
 
   private:
-    char* data_ptr = nullptr; ///< raw data
+    const char* data_ptr = nullptr; ///< raw data
     bool is_owner = false;    ///< true if data internally allocated
 
     /// free data
@@ -48,16 +48,23 @@ namespace networking {
     static constexpr int MSG_LEN = 1024;
 
   public:
+    SocketUDP();
+
     SocketUDP(Address address);
 
     ~SocketUDP();
 
-    Data read_data(Address& src);
+    void bind(Address address);
 
-    int send_data(Data& data, Address& dest);
+    Data receive(Address& src);
+
+    int send(Data& data, Address& dest);
+
+    int get_file_descriptor() { return fd; }
 
   private:
     int fd;
+    bool bound = false;
     Address address;
   };
 }

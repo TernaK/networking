@@ -25,7 +25,7 @@ Data::Data(int length) {
   is_owner = true;
 }
 
-Data::Data(char* data_ptr, int length) {
+Data::Data(const char* data_ptr, int length) {
   this->data_ptr = data_ptr;
   this->length = length;
   is_owner = false;
@@ -58,31 +58,41 @@ void Data::release() {
 }
 
 //--------------------------------------------------SocketUDP
-SocketUDP::SocketUDP(Address address) : address(address) {
+SocketUDP::SocketUDP() {
   fd = socket(AF_INET, SOCK_DGRAM, 0);
   if(fd == -1)
     throw std::runtime_error(strerror(errno));
+  std::cerr << "UDP socket created" << std::endl;
+}
 
-  if(bind(fd, address(), sizeof(address.addr)) == -1)
-    throw std::runtime_error(strerror(errno));
-
-  std::cerr << "UDP socket created @ " << address.get_ip_address() << ":" << address.get_port() << std::endl;
+SocketUDP::SocketUDP(Address address) : SocketUDP() {
+  bind(address);
 }
 
 SocketUDP::~SocketUDP() {
   close(fd);
 }
 
-Data SocketUDP::read_data(Address& src) {
+void SocketUDP::bind(Address address) {
+  if(::bind(fd, address(), sizeof(address.addr)) == -1)
+    throw std::runtime_error(strerror(errno));
+  this->address = address;
+  bound = true;
+  std::cerr << "socket bound to " << address.get_ip_address() << ":" << address.get_port() << std::endl;
+}
+
+Data SocketUDP::receive(Address& src) {
+  if(!bound)
+    std::cerr << "socket not bound" << std::endl;
   Data data(MSG_LEN);
   socklen_t socklen = sizeof(src.addr);
-  data.length = recvfrom(fd, data(), data.length, 0, src(), &socklen);
+  data.length = recvfrom(fd, (void*)data(), data.length, 0, src(), &socklen);
   return data;
 }
 
-int SocketUDP::send_data(Data& data, Address& dest) {
+int SocketUDP::send(Data& data, Address& dest) {
   socklen_t socklen = sizeof(dest.addr);
-  int bytes_sent = sendto(fd, data(), data.length, 0, dest(), socklen);
+  int bytes_sent = sendto(fd, (void*)data(), data.length, 0, dest(), socklen);
   if(!(bytes_sent == data.length))
     fprintf(stderr, "%d bytes sent of %lu\n", bytes_sent, data.length);
   return bytes_sent;
