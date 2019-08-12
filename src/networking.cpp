@@ -94,7 +94,7 @@ Data SocketUDP::receive(Address& src) {
 
 int SocketUDP::send(Data& data, Address& dest) {
   socklen_t socklen = sizeof(dest.addr);
-  int bytes_sent = sendto(fd, (void*)data(), data.length, 0, dest(), socklen);
+  int bytes_sent = sendto(fd, (void*)data(), data.length, 0, dest.ptr<sockaddr>(), socklen);
   if(!(bytes_sent == data.length))
     fprintf(stderr, "%d bytes sent of %lu\n", bytes_sent, data.length);
   return bytes_sent;

@@ -14,6 +14,7 @@ namespace networking {
     Address() = default;
     Address(std::string ip_add, unsigned int short port);
     sockaddr* operator()() const { return (sockaddr*)&addr; };
+    template<typename T = sockaddr> T* ptr() { return (T*)&addr; }
     std::string get_ip_address();
     unsigned short get_port();
   };
@@ -32,6 +33,7 @@ namespace networking {
     Data(Data&&);
     ~Data();
     const char* operator()() { return data_ptr; }
+    template<typename T = const char> T* ptr() { return (T*)data_ptr; }
 
   private:
     const char* data_ptr = nullptr; ///< raw data
