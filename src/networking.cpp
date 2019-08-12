@@ -47,6 +47,7 @@ Data& Data::operator=(const Data& data) {
 Data::Data(Data&& data) {
   data_ptr = data.data_ptr;
   is_owner = data.is_owner;
+  data.is_owner = false;
   data.data_ptr = nullptr;
 }
 
@@ -80,7 +81,7 @@ void SocketUDP::bind(Address address) {
     throw std::runtime_error(strerror(errno));
   this->address = address;
   bound = true;
-  fprintf(stderr, "socket bound to %s:%d", address.get_ip_address().c_str(), address.get_port());
+  fprintf(stderr, "socket bound to %s:%d\n", address.get_ip_address().c_str(), address.get_port());
 }
 
 Data SocketUDP::receive(Address& src) {
@@ -88,13 +89,13 @@ Data SocketUDP::receive(Address& src) {
     std::cerr << "socket not bound" << std::endl;
   Data data(MSG_LEN);
   socklen_t socklen = sizeof(src.addr);
-  data.length = recvfrom(fd, (void*)data(), data.length, 0, src(), &socklen);
+  data.length = recvfrom(fd, data.ptr<void>(), data.length, 0, src(), &socklen);
   return data;
 }
 
 int SocketUDP::send(Data& data, Address& dest) {
   socklen_t socklen = sizeof(dest.addr);
-  int bytes_sent = sendto(fd, (void*)data(), data.length, 0, dest.ptr<sockaddr>(), socklen);
+  int bytes_sent = sendto(fd, data.ptr<void>(), data.length, 0, dest.ptr<sockaddr>(), socklen);
   if(!(bytes_sent == data.length))
     fprintf(stderr, "%d bytes sent of %lu\n", bytes_sent, data.length);
   return bytes_sent;
