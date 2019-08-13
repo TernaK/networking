@@ -4,6 +4,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
+#include <functional>
+#include <thread>
+#include <tuple>
+#include <atomic>
+#include <memory>
 
 namespace networking {
   //--------------------------------------------------Address
@@ -88,15 +93,42 @@ namespace networking {
     /// wait until data is received
     Data receive(Address& src);
 
-    int send(Data& data, Address& dest);
+    int send(Data& data, Address&& dest);
 
     int get_file_descriptor() { return fd; }
 
     Address get_address() { return address; }
 
+    void close() { ::close(fd); };
+
   private:
     int fd;
     bool bound = false;
     Address address;
+  };
+
+  //--------------------------------------------------ServerUDP
+  class ServerUDP {
+  public:
+    using CallbackFunc = std::function<void(Data&,Address&)>;
+    /// continually listen for data and notify
+    /// @param address the local address to bind to
+    /// @param callback will be called everytime data is received
+    ServerUDP(Address address, CallbackFunc& callback);
+
+    ~ServerUDP();
+
+    /// close the connection???
+    void stop();
+
+    bool is_running() { return run; }
+
+  private:
+    void server_routine();
+
+    std::unique_ptr<SocketUDP> socket;
+    std::atomic_bool run { true };
+    std::thread server_thread;
+    CallbackFunc data_callback;
   };
 }

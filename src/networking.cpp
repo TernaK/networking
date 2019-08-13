@@ -71,7 +71,7 @@ SocketUDP::SocketUDP(Address address) : SocketUDP() {
 }
 
 SocketUDP::~SocketUDP() {
-  close(fd);
+  close();
 }
 
 void SocketUDP::bind(Address address) {
@@ -93,10 +93,35 @@ Data SocketUDP::receive(Address& src) {
   return data;
 }
 
-int SocketUDP::send(Data& data, Address& dest) {
+int SocketUDP::send(Data& data, Address&& dest) {
   socklen_t socklen = sizeof(dest.addr);
   int bytes_sent = sendto(fd, data.ptr<void>(), data.length, 0, dest.ptr<sockaddr>(), socklen);
   if(!(bytes_sent == data.length))
     fprintf(stderr, "%d bytes sent of %lu\n", bytes_sent, data.length);
   return bytes_sent;
+}
+
+//--------------------------------------------------ServerUDP
+ServerUDP::ServerUDP(Address address, CallbackFunc& callback) {
+  socket = std::unique_ptr<SocketUDP>(new SocketUDP(address));
+  data_callback = callback;
+  server_thread = std::thread(&ServerUDP::server_routine, this);
+}
+
+ServerUDP::~ServerUDP() {
+  stop();
+}
+
+void ServerUDP::stop() {
+  run = false;
+  if(server_thread.joinable())
+    server_thread.join();
+}
+
+void ServerUDP::server_routine() {
+  while(run) {
+    Address src_address;
+    Data data = socket->receive(src_address);
+    data_callback(data,src_address);
+  }
 }
